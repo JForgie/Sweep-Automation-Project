@@ -1,0 +1,782 @@
+Option Explicit On
+Imports System
+Imports System.IO
+Imports System.Text
+Imports System.Runtime.CompilerServices
+Imports Microsoft.VisualBasic.FileIO.TextFieldParser
+Imports Microsoft.Office.Interop.Excel
+Imports Microsoft.Office.Interop
+
+
+
+Public Class Form1
+
+    Private Sub Button1_Click(sender As Object, e As EventArgs) Handles Button1.Click
+        If ListBox1.Items.Count > 0 Then
+
+
+            'prepare excel
+            Dim xlApp As Excel.Application
+            Dim xlWb As Excel.Workbook
+            Dim xlWS As Excel.Worksheet
+            Dim xlCell As Excel.Range
+
+            ' define variable
+            Dim lbItemName As String
+            Dim counter As Integer = 1
+            Dim blank As String = " "
+
+
+            'define limits
+            Dim RLlimit As Integer = 21
+            Dim DTFlimit As Integer = 20
+
+            'Define booleans
+            Dim RlTrue As Boolean = False
+            Dim DtfTrue As Boolean = False
+            Dim RLpass As String = ""
+            Dim DTFpass As String = ""
+
+            'progress bar class
+            Dim pb As New Progress_Bar
+            Dim increment As Decimal
+
+            increment = 100 / Convert.ToDecimal(lblListIndex.Text)
+            pb.WindowTitle = "Parsing CSV files..."
+            pb.CallerThreadSet = Threading.Thread.CurrentThread
+
+
+            'setup progress bar
+            With ProgressBar1
+                .Minimum = 1
+                .Maximum = lblListIndex.Text
+                .Value = 1
+                .Step = 1
+                .Visible = False
+            End With
+
+            For x As Integer = 0 To ListBox1.Items.Count - 1
+                lbItemName = ListBox1.Items(x).ToString
+                pb.OverallProgressText = "Overall Progress..."
+                pb.PartialProgressValue = 100
+                pb.PartialProgressText = "Working on " & lbItemName
+                lbName.Items.Add(lbItemName)
+                'path to open
+                Dim path As String = lblFolderPath.Text & "\" & lbItemName
+                Dim Path2 As String = "C:\Users\ctstech\Desktop\Sweep project\RL test.csv"
+                'MsgBox(path)
+                Call AppendFile.RewriteLine(path, "c:\output.csv", 1, "Title,SubTitle,Value" & vbNewLine)
+                Dim streamReader As New IO.StreamReader("c:\output.csv")
+                Dim sText As String
+                Dim lvItem As ListViewItem
+                Dim lvSubitem As ListViewItem
+                While Not streamReader.EndOfStream
+                    sText = streamReader.ReadLine()
+                    sText = sText.Replace("""", "")
+                    If Not String.IsNullOrEmpty(sText) Then
+                        ' If Not ListView1.Columns.Count = 0 Then
+                        'Add listview items
+                        lvItem = New ListViewItem(sText.Split(Chr(44)))
+                        Dim lvText As String = lvItem.Text
+                        Dim lvSubText As String = lvItem.SubItems(1).Text
+                        ' MsgBox(lvSubText)
+                        If Not lvItem.SubItems(0) Is Nothing Then
+                            On Error Resume Next
+                            ' MsgBox(lvText & "  " & lvSubText)
+                            Select Case lvText
+                                Case "Return Loss"
+                                    'MsgBox(lvText)
+                                    lbTest.Items.Add(lvText)
+                                    RlTrue = True
+                                    DtfTrue = False
+                                Case "DTF-RL"
+                                    'MsgBox(lvText)
+                                    lbTest.Items.Add(lvText)
+                                    RlTrue = False
+                                    DtfTrue = True
+                                Case "Date:"
+                                    'MsgBox(lvSubText & ": " & lvItem.SubItems(2).Text)
+                                    lbDate.Items.Add(lvItem.SubItems(2).Text)
+                                Case "Ins. Loss:"
+                                    lbIL.Items.Add(lvSubText)
+                                Case "Model"
+                                    ' MsgBox(lvSubText)
+                                Case "Prop.Vel:"
+                                    ' MsgBox(lvSubText)
+                                    lbPropVel.Items.Add(lvSubText)
+                                Case "M1"
+                                    ' MsgBox(lvSubText & ":" & lvItem.SubItems(2).Text)
+                                    If lvSubText Is Nothing Then
+                                        lvSubText = " "
+                                    End If
+                                    If lvItem.SubItems(2).Text Is Nothing Then
+                                        lvItem.SubItems(2).Text = " "
+                                    End If
+                                    lbM1D.Items.Add(lvSubText)
+                                    lbM1V.Items.Add(lvItem.SubItems(2).Text)
+                                Case "M2"
+                                    ' MsgBox(lvSubText & ":" & lvItem.SubItems(2).Text)
+                                    If lvSubText Is Nothing Then
+                                        lvSubText = " "
+                                    End If
+                                    If lvItem.SubItems(2).Text Is Nothing Then
+                                        lvItem.SubItems(2).Text = " "
+                                    End If
+                                    lbM2D.Items.Add(lvSubText)
+                                    lbM2V.Items.Add(lvItem.SubItems(2).Text)
+
+                            End Select
+
+
+                            '  MsgBox(lvText & lvSubText)
+                            '   ListView1.Items.Add(lvItem)
+                            ' End If
+                        Else
+                            'Populate Column Headers'
+                            'For Each value As String In sText.Split(Chr(44))
+                            'ListView1.Columns.Add(value)
+                            '  Next
+
+                        End If
+
+                    End If
+                End While
+                streamReader.Dispose()
+                If lbName.Items(x).ToString = "" Then
+                    lbName.Items.Add(blank)
+                End If
+                If lbTest.Items(x).ToString = "" Then
+                    lbTest.Items.Add(blank)
+                End If
+                If lbDate.Items(x).ToString = "" Then
+                    lbDate.Items.Add(blank)
+                End If
+                If lbIL.Items(x).ToString = "" Then
+                    lbIL.Items.Add(blank)
+                End If
+                If lbPropVel.Items(x).ToString = "" Then
+                    lbPropVel.Items.Add(blank)
+                End If
+                If lbM1D.Items(x).ToString = "" Then
+                    lbM1D.Items.Add(blank)
+                End If
+                If lbM1V.Items(x).ToString = "" Then
+                    lbM1V.Items.Add(blank)
+                End If
+                If lbM2D.Items(x).ToString = "" Then
+                    lbM2D.Items.Add(blank)
+                End If
+                If lbM2V.Items(x).ToString = "" Then
+                    lbM2V.Items.Add(blank)
+                End If
+                ' lblListIndex.Text = lblListIndex.Text - 1
+
+                ProgressBar1.PerformStep()
+                pb.OverallProgressValue = increment * counter
+                counter = counter + 1
+                ListView1.Items.Clear()
+            Next
+            pb.PartialProgressText = "Finalizing"
+
+            lblNameIndex.Text = lbName.Items.Count
+            lblTestIndex.Text = lbTest.Items.Count
+            lblDateIndex.Text = lbDate.Items.Count
+            lblILindex.Text = lbIL.Items.Count
+            lblPropIndex.Text = lbPropVel.Items.Count
+            lblM1Dindex.Text = lbM1D.Items.Count
+            lblM1vIndex.Text = lbM1V.Items.Count
+            lblM2dIndex.Text = lbM2D.Items.Count
+            lblM2vIndex.Text = lbM2V.Items.Count
+            ProgressBar1.Visible = False
+            For x As Integer = 0 To lbName.Items.Count - 1
+                Dim lvi As New ListViewItem
+                lvi.Text = lbName.Items(x).ToString
+                lvi.SubItems.Add(lbTest.Items(x).ToString)
+                lvi.SubItems.Add(lbDate.Items(x).ToString)
+                lvi.SubItems.Add(lbIL.Items(x).ToString)
+                lvi.SubItems.Add(lbPropVel.Items(x).ToString)
+                lvi.SubItems.Add(lbM1D.Items(x).ToString)
+                lvi.SubItems.Add(lbM1V.Items(x).ToString)
+                lvi.SubItems.Add(lbM2D.Items(x).ToString)
+                lvi.SubItems.Add(lbM2V.Items(x).ToString)
+                lvParsed.Items.Add(lvi)
+            Next
+            lvParsed.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent)
+        Else
+            MsgBox("Load a directory")
+        End If
+    End Sub
+
+    Private Sub Button2_Click(sender As Object, e As EventArgs) Handles Button2.Click
+        Dim path As String = "C:\output.csv"
+        ' Dim path2 As String = "C:\Users\ctstech\Desktop\Sweep project\test.csv"
+
+        Using csvfileparser As New Microsoft.VisualBasic.FileIO.TextFieldParser(path)
+
+            Dim csValues As String()
+            With csvfileparser
+                .TextFieldType = Microsoft.VisualBasic.FileIO.FieldType.Delimited
+                .Delimiters = New String() {","}
+                .HasFieldsEnclosedInQuotes = True
+            End With
+
+            While Not csvfileparser.EndOfData
+                csValues = csvfileparser.ReadFields()
+                Dim counter As Integer = csValues.Count
+                'Dim csWhole As ListViewItem = String.Join(" ", csValues)
+                Dim csWhole As ListViewItem = New ListViewItem(csValues)
+                Do While Not csvfileparser.EndOfData
+                    ListView1.Items.Add(csWhole)
+                Loop
+            End While
+        End Using
+    End Sub
+
+    Private Sub btnParseLV_Click(sender As Object, e As EventArgs) Handles btnParseLV.Click
+        
+      
+
+    End Sub
+
+    Private Sub Form1_Load(sender As Object, e As EventArgs) Handles MyBase.Load
+        With lvParsed
+            .View = View.Details
+            .Columns.Add("Name", 55, HorizontalAlignment.Left)
+            .Columns.Add("Test", 55, HorizontalAlignment.Left)
+            .Columns.Add("Date", 55, HorizontalAlignment.Left)
+            .Columns.Add("Ins Loss", 55, HorizontalAlignment.Left)
+            .Columns.Add("Prop Vel:", 55, HorizontalAlignment.Left)
+            .Columns.Add("M1 D", 45, HorizontalAlignment.Left)
+            .Columns.Add("M1 V", 45, HorizontalAlignment.Left)
+            .Columns.Add("M2 D", 45, HorizontalAlignment.Left)
+            .Columns.Add("M2 V", 45, HorizontalAlignment.Left)
+        End With
+
+       
+    End Sub
+
+    Private Sub btnOpenExcel_Click(sender As Object, e As EventArgs) Handles btnOpenExcel.Click
+        Dim xlApp As Excel.Application
+        Dim xlWb As Excel.Workbook
+        Dim xlWS As Excel.Worksheet
+        Dim xlCell As Excel.Range
+        Dim xlcreate As Excel.Application
+        Try
+            If My.Computer.FileSystem.FileExists("c://textsheet.xlsx") Then
+            Else
+                MsgBox("Need to create file")
+                xlcreate = CreateObject("Excel.Application")
+                xlWb = xlcreate.Workbooks.Add
+                xlWb.SaveAs("c:\testsheet.xlsx")
+
+            End If
+
+            xlApp = New Excel.Application
+            xlApp.Visible = False
+            xlWb = xlApp.Workbooks.Open("c:\testsheet")
+            xlWS = xlWb.Worksheets("sheet1")
+
+
+            Dim counter As Integer = 1
+            Dim lbTxt As String
+
+            If xlWS.Range("A1").Value = "" Then
+                xlWS.Range("A1").Value = "File Name"
+            End If
+            If xlWS.Range("B1").Value = "" Then
+                xlWS.Range("B1").Value = "Test Type"
+            End If
+            If xlWS.Range("C1").Value = "" Then
+                xlWS.Range("C1").Value = "Date"
+            End If
+            If xlWS.Range("D1").Value = "" Then
+                xlWS.Range("D1").Value = "Insertion Loss"
+            End If
+            If xlWS.Range("E1").Value = "" Then
+                xlWS.Range("E1").Value = "Prop Vel"
+            End If
+            If xlWS.Range("F1").Value = "" Then
+                xlWS.Range("F1").Value = "M1 Dis/Freq"
+            End If
+            If xlWS.Range("G1").Value = "" Then
+                xlWS.Range("G1").Value = "M1 Value"
+            End If
+            If xlWS.Range("H1").Value = "" Then
+                xlWS.Range("H1").Value = "M2 Dis/Freq"
+            End If
+            If xlWS.Range("I1").Value = "" Then
+                xlWS.Range("I1").Value = "M2 Value"
+            End If
+
+            For i As Integer = 0 To lbName.Items.Count - 1
+                lbTxt = lbName.Items(i).ToString
+                xlWS.Range("A" & i + 2).Value = lbTxt
+                counter = counter + 1
+            Next
+
+            For i As Integer = 0 To lbTest.Items.Count - 1
+                lbTxt = lbTest.Items(i).ToString
+                xlWS.Range("B" & i + 2).Value = lbTxt
+            Next
+
+            For i As Integer = 0 To lbDate.Items.Count - 1
+                lbTxt = lbDate.Items(i).ToString
+                xlWS.Range("C" & i + 2).Value = lbTxt
+            Next
+
+            For i As Integer = 0 To lbIL.Items.Count - 1
+                lbTxt = lbIL.Items(i).ToString
+                xlWS.Range("D" & i + 2).Value = lbTxt
+            Next
+
+            For i As Integer = 0 To lbPropVel.Items.Count - 1
+                lbTxt = lbPropVel.Items(i).ToString
+                xlWS.Range("E" & i + 2).Value = lbTxt
+            Next
+
+            For i As Integer = 0 To lbM1D.Items.Count - 1
+                lbTxt = lbM1D.Items(i).ToString
+                xlWS.Range("F" & i + 2).Value = lbTxt
+            Next
+
+            For i As Integer = 0 To lbM1V.Items.Count - 1
+                lbTxt = lbM1V.Items(i).ToString
+                xlWS.Range("G" & i + 2).Value = lbTxt
+            Next
+
+            For i As Integer = 0 To lbM2D.Items.Count - 1
+                lbTxt = lbM2D.Items(i).ToString
+                xlWS.Range("H" & i + 2).Value = lbTxt
+            Next
+
+            For i As Integer = 0 To lbM2V.Items.Count - 1
+                lbTxt = lbM2V.Items(i).ToString
+                xlWS.Range("I" & i + 2).Value = lbTxt
+            Next
+
+            xlApp.Visible = True
+        Catch ex As Exception
+            MsgBox("Can't complete operation" & vbCrLf & ex.Message)
+        End Try
+
+    End Sub
+
+    Private Sub OpenFolderToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles OpenFolderToolStripMenuItem.Click
+        Dim fbd As FolderBrowserDialog
+        fbd = New FolderBrowserDialog
+
+        fbd.Description = "Select the folder where the exported sweep files are located"
+        fbd.ShowDialog()
+
+        Dim folderpath As String
+        folderpath = fbd.SelectedPath
+        If folderpath <> "" Then
+            Dim directory As DirectoryInfo = New DirectoryInfo(folderpath)
+            ListBox1.Items.Clear()
+            For Each Fi In directory.GetFiles()
+                ListBox1.Items.Add(Fi)
+            Next
+            lblFolderPath.Text = folderpath
+        Else
+            MsgBox("You must select a folder to continue")
+        End If
+        lblListIndex.Text = ListBox1.Items.Count
+    End Sub
+
+    Private Sub lblFolderPath_Click(sender As Object, e As EventArgs) Handles lblFolderPath.Click
+
+    End Sub
+
+    Private Sub Label6_Click(sender As Object, e As EventArgs)
+
+    End Sub
+
+    Private Sub Label7_Click(sender As Object, e As EventArgs) Handles Label7.Click
+
+    End Sub
+
+    Private Sub Label9_Click(sender As Object, e As EventArgs) Handles Label9.Click
+
+    End Sub
+
+    Private Sub ListBox1_Click(sender As Object, e As EventArgs) Handles ListBox1.Click
+        ListView1.Items.Clear()
+        ListView1.Columns.Clear()
+        lvParsed.SelectedItems.Clear()
+        Dim path As String = lblFolderPath.Text & "\" & ListBox1.SelectedItem.ToString
+        Dim sText As String
+        Dim lvItem As ListViewItem
+        Dim lvSubitem As ListViewItem
+
+
+        If lvParsed.Items.Count = ListBox1.Items.Count Then
+            lvParsed.Focus()
+            lvParsed.Items(ListBox1.SelectedIndex).Selected = True
+        End If
+        Call AppendFile.RewriteLine(path, "c:\filepreview.csv", 1, "Title,SubTitle,Value" & vbNewLine)
+        Dim streamReader As New IO.StreamReader("c:\filepreview.csv")
+
+        While Not streamReader.EndOfStream
+            sText = streamReader.ReadLine()
+            sText = sText.Replace("""", "")
+            If Not String.IsNullOrEmpty(sText) Then
+                If Not ListView1.Columns.Count = 0 Then
+                    'Add listview items
+                    lvItem = New ListViewItem(sText.Split(Chr(44)))
+                    ListView1.Items.Add(lvItem)
+                Else
+                    'Populate Column Headers'
+                    For Each value As String In sText.Split(Chr(44))
+                        ListView1.Columns.Add(value)
+                    Next
+
+                End If
+            End If
+        End While
+        streamReader.Dispose()
+        ListView1.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent)
+    End Sub
+
+    Private Sub ListBox1_DoubleClick(sender As Object, e As EventArgs) Handles ListBox1.DoubleClick
+        btnGraphData_Click(btnGraphData, New System.EventArgs())
+
+    End Sub
+
+    Private Sub ListBox1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles ListBox1.SelectedIndexChanged
+
+    End Sub
+
+    Private Sub btnGraphData_Click(sender As Object, e As EventArgs) Handles btnGraphData.Click
+
+        Try
+            ' Error Prevention
+            If ListView1.Items.Count = 0 Then
+                MsgBox("Select a file to plot")
+            Else
+
+                ' Beginning of full code
+                ' dim variables 
+                Dim iText As String
+                Dim startIndex As Integer = 0
+                Dim stopIndex As Integer = ListView1.Items.Count
+                Dim M1distance As Decimal
+                Dim M1Value As Decimal
+                Dim M2Distance As Decimal
+                Dim M2Value As Decimal
+                Dim iSubText As String
+                Dim xPlot As Decimal() = {}
+                Dim yPlot As Decimal() = {}
+                Dim isRL As Boolean = False
+                Dim duelPlot As Integer = 0
+                Dim resolution As String
+
+
+                'read through file line by line 
+                For Each item As ListViewItem In ListView1.Items
+                    iText = item.Text
+                    ' MsgBox(iText & " : " & item.Index)
+                    If iText = "DTF-RL" Then
+                    End If
+
+                    'Getting raw data only. This will allow plots to be created 
+                    If iText = "Frequency(MHz)" Then
+                        startIndex = item.Index
+                    End If
+                    If iText = "Distance( ft)" Then
+                        startIndex = item.Index
+                    End If
+                    If iText = "Resolution:" Then
+                        resolution = item.SubItems(1).Text
+                    End If
+                    If iText = "M1" Then
+                        M1distance = Convert.ToDecimal(item.SubItems(1).Text)
+                        M1Value = Convert.ToDecimal(item.SubItems(2).Text)
+                    End If
+                    If iText = "M2" Then
+                        M2Distance = Convert.ToDecimal(item.SubItems(1).Text)
+                        M2Value = Convert.ToDecimal(item.SubItems(2).Text)
+                    End If
+                Next
+
+                ' adding raw data to array to be plotted
+
+                For x As Integer = startIndex + 1 To stopIndex - 1
+
+                    Dim newXItem As String = ListView1.Items(x).Text
+                    xPlot.Add(Convert.ToDecimal(newXItem))
+
+                    Dim newYItem As String = ListView1.Items(x).SubItems(1).Text
+                    yPlot.Add(Convert.ToDecimal(newYItem))
+                    'MsgBox(newXItem & " : " & newYItem)
+                
+            Next
+
+
+
+        ' dualplot identification. Can change to msgbox prompt
+        If resolution <> yPlot.Count Then
+            MsgBox("This is a dualplot")
+        End If
+
+        'Clear all chart titles so they don't stack
+        Chart1.Titles.Clear()
+
+        ' verifying series for plots and markers 
+        With Chart1
+            If .Series.Count < 3 Then
+                .Series.Add("Marker 1")
+                .Series.Add("Marker 2")
+            Else
+                Chart1.Series(1).Points.Clear()
+                Chart1.Series(2).Points.Clear()
+            End If
+
+            ' define data series
+            .Series(0).LegendText = "Data"
+            .Series(0).ChartType = DataVisualization.Charting.SeriesChartType.Line
+            .Series(1).ChartType = DataVisualization.Charting.SeriesChartType.Point
+            .Series(2).ChartType = DataVisualization.Charting.SeriesChartType.Point
+
+
+            ' clear data so new plots aren't added
+            .Series(0).Points.Clear()
+
+            'name data 
+            .ChartAreas(0).AxisX.Title = "Value"
+            .ChartAreas(0).AxisY.Title = "value"
+
+            'name plot
+            .Titles.Add(ListBox1.SelectedItem.ToString)
+
+            ' find out if it's RL. If so inverse the X axis
+            If isRL <> True Then
+                '  MsgBox("RL")
+                Chart1.ChartAreas(0).AxisY.IsReversed = True
+                For x As Integer = 0 To xPlot.Count - 1
+                    .Series(0).Points.AddXY(xPlot(x), yPlot(x))
+                Next
+            Else
+                Chart1.ChartAreas(0).AxisY.IsReversed = False
+                For x As Integer = 0 To xPlot.Count - 1
+                    .Series(0).Points.AddXY(xPlot(x), yPlot(x))
+                Next
+            End If
+
+
+            ' define marker data styling and population
+            If M1distance <> 0 Then
+                .Series(1).Points.AddXY(M1distance, M1Value)
+                .Series(1).Points(0).MarkerStyle = DataVisualization.Charting.MarkerStyle.Diamond
+                .Series(1).Points(0).MarkerSize = 20
+                .Series(1).Points(0).MarkerColor = Color.Orange
+            End If
+            If M2Distance <> 0 Then
+                .Series(2).Points.AddXY(M2Distance, M2Value)
+                .Series(2).Points(0).MarkerStyle = DataVisualization.Charting.MarkerStyle.Diamond
+                .Series(2).Points(0).MarkerSize = 20
+                .Series(2).Points(0).MarkerColor = Color.Red
+            End If
+        End With
+
+        Dim minSize As Size
+        minSize.Width = 982
+        minSize.Height = 309
+        lvParsed.Height = minSize.Height
+        lvParsed.Width = minSize.Width
+        Chart1.Visible = True
+            End If
+
+        Catch ex As Exception
+            MsgBox("An error ocurred:" & vbNewLine & ex.Message)
+        End Try
+    End Sub
+    
+    Private Sub btnHidePlot_Click(sender As Object, e As EventArgs) Handles btnHidePlot.Click
+        Chart1.Visible = False
+        Chart1.Titles.Clear()
+        Dim maxSize As Size
+        maxSize.Width = 982
+        maxSize.Height = 803
+        lvParsed.Height = maxSize.Height
+        lvParsed.Width = maxSize.Width
+    End Sub
+
+    Private Sub lvParsed_Click(sender As Object, e As EventArgs) Handles lvParsed.Click
+        Dim indexValue As Integer
+        indexValue = lvParsed.FocusedItem.Index
+        ListBox1.SelectedIndex = indexValue
+        ListBox1_Click(ListBox1, New System.EventArgs())
+    End Sub
+
+    Private Sub lvParsed_DoubleClick(sender As Object, e As EventArgs) Handles lvParsed.DoubleClick
+        ListBox1_DoubleClick(ListBox1, New System.EventArgs())
+    End Sub
+
+    Private Sub lvParsed_SelectedIndexChanged(sender As Object, e As EventArgs) Handles lvParsed.SelectedIndexChanged
+
+    End Sub
+
+    Private Sub Chart1_Click(sender As Object, e As MouseEventArgs) Handles Chart1.Click
+
+   
+    End Sub
+
+    Private Sub btnVerify_Click(sender As Object, e As EventArgs) Handles btnVerify.Click
+        If ListView1.Items.Count = 0 Then
+            MsgBox("Select sweep to verify from List")
+        Else
+
+            Dim startIndex As Integer = 0
+            Dim stopindex As Integer = ListView1.Items.Count
+            Dim yIndex As Integer
+            Dim xIndex As Integer
+            Dim itext As String
+            Dim M1distance As Decimal
+            Dim M1Value As Decimal
+            Dim M2Distance As Decimal
+            Dim M2value As Decimal
+            Dim xPlot As Decimal() = {}
+            Dim yPlot As Decimal() = {}
+            Dim MinY As Decimal = Decimal.MinValue
+            Dim MaxY As Decimal = Decimal.MaxValue
+            Dim MinX As Decimal = Decimal.MinValue
+            Dim MaxX As Decimal = Decimal.MaxValue
+            Dim MinY2 As Decimal = Decimal.MinValue
+            Dim MaxY2 As Decimal = Decimal.MinValue
+            Dim isRL As Boolean = False
+            Dim path As String = lblFolderPath.Text & "\" & ListBox1.SelectedItem.ToString
+            Dim markerIndex As Integer = Nothing
+            Dim marker2Index As Integer = Nothing
+            Dim MaxXindex As Integer = Nothing
+            Dim maxYindex As Integer = Nothing
+            Dim matchXtoY As Integer = Nothing
+
+            For Each item As ListViewItem In ListView1.Items
+                itext = item.Text
+                ' MsgBox(iText & " : " & item.Index)
+                If itext = "Frequency(MHz)" Then
+                    startIndex = item.Index + 1
+                End If
+                If itext = "Distance( ft)" Then
+                    startIndex = item.Index + 1
+                    'MsgBox("Start Index is " & startIndex)
+                    isRL = True
+                End If
+                If itext = "M1" Then
+                    M1distance = Convert.ToDecimal(item.SubItems(1).Text)
+                    M1Value = Convert.ToDecimal(item.SubItems(2).Text)
+                    markerIndex = item.Index + 2
+                    ' MsgBox("Marker Index is " & markerIndex)
+                End If
+                If itext = "M2" Then
+                    M2Distance = Convert.ToDecimal(item.SubItems(1).Text)
+                    M2value = Convert.ToDecimal(item.SubItems(2).Text)
+                    marker2Index = item.Index + 2
+                End If
+            Next
+
+            For x As Integer = startIndex + 1 To stopindex - 1
+                Dim newXItem As String = ListView1.Items(x).Text
+                xPlot.Add(Convert.ToDecimal(newXItem))
+                Dim newYItem As String = ListView1.Items(x).SubItems(1).Text
+                yPlot.Add(Convert.ToDecimal(newYItem))
+            Next
+
+            Dim concat As String
+
+            MinY = yPlot.Min
+            MaxY = yPlot.Max
+
+            MinX = xPlot.Min
+            MaxX = xPlot.Max
+
+            matchXtoY = Array.IndexOf(yPlot, MinY)
+            ' MsgBox(matchXtoY)
+
+
+            'MsgBox("Marker 1 Minimum Value is: " & MinY & " Maximum Value is:  " & MaxY)
+
+            If isRL = True Then
+                If M1Value <> MaxY Then
+                    Dim Response = MsgBox("This plots marker is not at peak value. Would you like to move the marker?", vbYesNo, "Marker Verification")
+                    If Response = MsgBoxResult.Yes Then
+                        Dim lReader As New StreamReader(path)
+                        Dim content As String = ""
+                        Dim LineNum As Integer = 1
+                        While LineNum < markerIndex
+                                content = content & lReader.ReadLine & vbNewLine
+                            'MsgBox(LineNum & vbNewLine & content)
+                            LineNum = LineNum + 1
+                        End While
+                        lReader.Close()
+                        lReader.Dispose()
+                        Dim lReader2 As New StreamReader(path)
+                        Dim fRow As Integer = 0
+                        Dim fcontent As String
+                        While Not lReader2.EndOfStream
+                            'MsgBox(fContent)
+                            fcontent = fcontent & lReader2.ReadLine & vbNewLine
+                            fRow = fRow + 1
+                            If fRow = markerIndex Then
+                                fcontent = "M1," & xPlot(matchXtoY) & "," & MinY & vbNewLine & vbNewLine
+                                ' MsgBox("Yes" & (fContent))
+                                fRow = fRow + 1
+                            End If
+                        End While
+                        lReader2.Close()
+                        lReader2.Dispose()
+
+                        System.IO.File.WriteAllText(path, content & fcontent)
+                    Else
+                        MsgBox("Ok, I won't do anything")
+                    End If
+                End If
+            End If
+        End If
+        ListBox1_Click(ListBox1, New System.EventArgs())
+        btnGraphData_Click(btnGraphData, New System.EventArgs())
+    End Sub
+
+    Private Sub ImportToTableToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ImportToTableToolStripMenuItem.Click
+        lvParsed.Items.Clear()
+        Button1_Click(Button1, New System.EventArgs())
+    End Sub
+
+    Private Sub ExportToExcelToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles ExportToExcelToolStripMenuItem.Click
+
+        btnOpenExcel_Click(btnOpenExcel, New System.EventArgs())
+    End Sub
+
+    Private Sub VerifyMarkerDataToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles VerifyMarkerDataToolStripMenuItem.Click
+        btnVerify_Click(btnVerify, New System.EventArgs())
+    End Sub
+
+    Private Sub AboutToolStripMenuItem_Click(sender As Object, e As EventArgs) Handles AboutToolStripMenuItem.Click
+        MsgBox("Created by Josh Forgie for CTS" & vbNewLine & "jforgie@cts1.com")
+    End Sub
+End Class
+Public Class AppendFile
+
+
+    Public Shared Sub RewriteLine(ByVal path As String, fpath2 As String, lineNumber As Integer, appendString As String)
+        Dim fpath As String = path
+        Dim fContent As String = ""
+        Dim lReader As New StreamReader(fpath)
+        Dim fRow As Integer = 0
+        While Not lReader.EndOfStream
+            'MsgBox(fContent)
+            fContent = fContent & lReader.ReadLine & vbNewLine
+            fRow = fRow + 1
+            If fRow = lineNumber Then
+                fContent = appendString & vbNewLine
+                ' MsgBox("Yes" & (fContent))
+                fRow = fRow + 1
+            End If
+        End While
+        lReader.Close()
+        lReader.Dispose()
+        System.IO.File.WriteAllText(fpath2, fContent)
+
+    End Sub
+End Class
+
